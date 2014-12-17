@@ -18,11 +18,11 @@ class Node : #Cellule
         self.maxUnit = 1 #Capacité de la case
 
 class Edge : #Arête
-    def __init__(self,id,s1,s2): #Arête de s1 vers s2
+    def __init__(self,id,s1,s2,time): #Arête de s1 vers s2
         self.id = id
         self.sommet1 = s1
         self.sommet2 = s2
-        self.length = Math.sqrt((s1.x-s2.x)**2+(s1.y-s2.y)**2) #Longueur (temps ?)
+        self.length = time #Longueur (temps en ms)
         self.fleets = [] #liste des Fleet qui la parcourent
 
 class Fleet : #Flotte en mouvement
