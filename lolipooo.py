@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import re
+import parse
 
 """Robot-joueur de Pooo
     
@@ -37,6 +39,37 @@ def register_pooo(uid):
 
 
 def init_pooo(init_string):
+    
+    p = re.compile('INIT([A-z0-9-]*)TO(.*)\[(.*)\];(.);(\d+)CELLS:(.*);(\d+)LINES:(.*)')
+    test_str = "INIT20ac18ab-6d18-450e-94af-bee53fdc8fcaTO6[2];1;3CELLS:1(23,9)'2'30'8'I,2(41,55)'1'30'8'II,3(23,103)'1'20'5'I;2LINES:1@3433OF2,1@6502OF3"
+ 
+    res = re.search(p, test_str)
+    groups = res.groups()
+    
+    """
+    Groups :
+    0 : matchid
+    1 : #players
+    2 : my player number
+    3 : speed
+    4 : #cells
+    5 : cell data
+    6 : #lines
+    7 : line data
+    """
+    gameData = {
+        'matchid':groups[0],
+        'playerNb':int(groups[1]),
+        'myId':int(groups[2]),
+        'speed':int(groups[3]),
+        'cellNb':int(groups[4]),
+        'cellData':parse.parseCells(groups[5]),
+        'lineNb':int(groups[6]),
+        'lineData':parse.parseLines(groups[7])
+    }
+    
+    print(gameData)
+    
     """Initialise le robot pour un match
         
         :param init_string: instruction du protocole de communication de Pooo (voire ci-dessous)
@@ -61,6 +94,7 @@ def init_pooo(init_string):
         
     """
     pass
+
     
     
     
@@ -79,3 +113,8 @@ def play_pooo():
     # (5)     TODO: traitement de state et transmission d'ordres order(msg)
     pass
     
+    
+    
+    
+init_pooo("")
+print(parse.analyzeState("STATE20ac18ab-6d18-450e-94af-bee53fdc8fcaIS2;3CELLS:1[2]12'4,2[2]15'2,3[1]33'6;4MOVES:1<5[2]@232'>6[2]@488'>3[1]@4330'2,1<10[1]@2241'3"))
