@@ -2,6 +2,7 @@
 
 import re
 import parse
+import game
 
 """Robot-joueur de Pooo
     
@@ -15,7 +16,7 @@ import parse
 __version__='0.1'
  
 ## chargement de l'interface de communication avec le serveur
-#from poooc import order, state, state_on_update, etime
+from poooc import order, state, state_on_update, etime
 
 # mieux que des print partout
 import logging
@@ -23,6 +24,12 @@ import logging
 import inspect
 
 def register_pooo(uid):
+    global playerId
+    playerId = uid
+    
+    #REG<uid>
+    #REG0947e717-02a1-4d83-9470-a941b6e8ed07
+    order("REG"+uid)
     """Inscrit un joueur et initialise le robot pour la compétition
         :param uid: identifiant utilisateur
         :type uid:  chaîne de caractères str(UUID) 
@@ -36,9 +43,8 @@ def register_pooo(uid):
 def init_pooo(init_string):
     
     p = re.compile('INIT([A-z0-9-]*)TO(.*)\[(.*)\];(.);(\d+)CELLS:(.*);(\d+)LINES:(.*)')
-    test_str = "INIT20ac18ab-6d18-450e-94af-bee53fdc8fcaTO6[2];1;3CELLS:1(23,9)'2'30'8'I,2(41,55)'1'30'8'II,3(23,103)'1'20'5'I;2LINES:1@3433OF2,1@6502OF3"
  
-    res = re.search(p, test_str)
+    res = re.search(p, init_string)
     groups = res.groups()
     
     """
@@ -58,12 +64,15 @@ def init_pooo(init_string):
         'myId':int(groups[2]),
         'speed':int(groups[3]),
         'cellNb':int(groups[4]),
-        'cellData':parse.parseCells(groups[5]),
+        'cellData':parse.parseCellsInit(groups[5]),
         'lineNb':int(groups[6]),
-        'lineData':parse.parseLines(groups[7])
+        'lineData':parse.parseLinesInit(groups[7])
     }
     
-    print(gameData)
+    global gameBoard
+    gameBoard = game.Game(gameData['matchid'],playerId,gameData['myId'],gameData['speed'],gameData['cellNb'],gameData['lineNb'])
+
+        
     
     """Initialise le robot pour un match
         :param init_string: instruction du protocole de communication de Pooo (voire ci-dessous)
@@ -94,14 +103,27 @@ def play_pooo():
     ### Début stratégie joueur ### 
     # séquence type :
     # (1) récupère l'état initial 
-    # init_state = state()
+    init_state = state()
+    init_pooo(init_state)
     # (2) TODO: traitement de init_state
-    # (3) while True :
-    # (4)     state = state_on_update()    
+    isRunning = True
+    while isRunning :
+        state = state_on_update()
+        data = parse.analyzeState(state)
+        if(data['type'] == 'STATE'):
+            globalState = data['data']
+        elif(data['type'] == 'GAMEOVER'):
+            pass
+        elif(data['type'] == 'ENDOFGAME'):
+            print("end of process")
+            isRunning = False
+
     # (5)     TODO: traitement de state et transmission d'ordres order(msg)
+    
+    #order(parse.createMoveOrder(cellFrom,cellTo,cellNb,playerId))
     pass
     
     
     
-init_pooo("")
+init_pooo("INIT20ac18ab-6d18-450e-94af-bee53fdc8fcaTO6[2];1;3CELLS:1(23,9)'2'30'8'I,2(41,55)'1'30'8'II,3(23,103)'1'20'5'I;2LINES:1@3433OF2,1@6502OF3")
 print(parse.analyzeState("STATE20ac18ab-6d18-450e-94af-bee53fdc8fcaIS2;3CELLS:1[2]12'4,2[2]15'2,3[1]33'6;4MOVES:1<5[2]@232'>6[2]@488'>3[1]@4330'2,1<10[1]@2241'3"))

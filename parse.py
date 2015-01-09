@@ -1,6 +1,6 @@
 import re
 
-def parseCells(str):
+def parseCellsInit(str):
     data = []
     
     cells = str.split('I,')
@@ -41,7 +41,7 @@ def parseCells(str):
     
     return data
     
-def parseLines(str):
+def parseLinesInit(str):
     data = []
     
     lines = str.split(',')
@@ -57,13 +57,13 @@ def parseLines(str):
         
         """
         groups :
-        0 : id
+        0 : source
         1 : dist
         2 : target
         """
         
         lineData = {
-        'id':int(groups[0]),
+        'src':int(groups[0]),
         'dist':int(groups[1]),
         'target':int(groups[2])
         }
@@ -156,24 +156,63 @@ def parseMovesState(str):
     
     return data
 
-def analyzeState(str):
+def analyzeState(str,matchid):
     """
     STATE<matchid>IS<#players>;
     <#cells>CELLS:<cellid>[<owner>]<offunits>'<defunits>,...;\
     <#moves>MOVES:<cellid><direction><#units>[<owner>]@<timestamp>'...<cellid>,...
     """
-    p = re.compile("STATE(.*)IS(\d+);(\d+)CELLS:(.*);(\d+)MOVES:(.*)")
+    
+    p = re.compile("^([A-Z]*)")
     
     res = re.search(p, str)
     groups = res.groups()
     
-    stateData = {
-        'matchid':groups[0],
-        'playerNb':int(groups[1]),
-        'cellNb':int(groups[2]),
-        'cellData':parseCellsState(groups[3]),
-        'lineNb':int(groups[4]),
-        'lineData':parseMovesState(groups[5])
-    }
+    state_type = groups[0]
     
-    return stateData
+    if (state_type == 'STATE'):
+        p = re.compile("STATE(.*)IS(\d+);(\d+)CELLS:(.*);(\d+)MOVES:(.*)")
+        
+        res = re.search(p, str)
+        groups = res.groups()
+
+        if(groups[0] == matchid):
+            stateData = {
+                'matchid':groups[0],
+                'playerNb':int(groups[1]),
+                'cellNb':int(groups[2]),
+                'cellData':parseCellsState(groups[3]),
+                'lineNb':int(groups[4]),
+                'lineData':parseMovesState(groups[5])
+            }
+            
+            returnType = {
+                'type':state_type,
+                'data':stateData
+            }
+    elif (state_type == 'GAMEOVER'):
+        returnType = {
+            'type':state_type
+        }
+        #créer une fonction (message de victoire si c'est nous qui gagnons ^^)
+        
+    elif (state_type == 'ENDOFGAME'):
+        returnType = {
+            'type':state_type
+        }
+        #se déconnecter
+    return returnType
+
+def createMoveOrder(cellFrom,cellToId,cellNb,playerId):
+    sourceSize = cellFrom['offunits']
+    prct = cellNb/sourceSize*100
+    if(prct > 100):
+        prct = 100
+    
+    
+    #[<userid>]MOV<%offunits>FROM<cellid>TO<cellid>
+    #[0947e717-02a1-4d83-9470-a941b6e8ed07]MOV33FROM1TO4
+    cmd = "["+playerId+"]MOV"+prct+"FROM"+cellFrom['id']+"TO"+cellToId
+    
+    return cmd
+    
