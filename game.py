@@ -8,10 +8,11 @@ class Game : #Terrain de la partie
 		self.lineNb = lineNb
 		self.nodes = [] #liste des cellules
 		self.myPlayer = Player(playerId)
-		for i in range(cellNb+1):
+		#self.router = Router(self)
+		for i in range(cellNb):
 			self.nodes.append(0)
 		self.edges = [] #liste des aretes
-		for i in range(cellNb+1):
+		for i in range(cellNb):
 			self.edges.append([])
 	
 	def generateCells(self,cellDic):
@@ -40,7 +41,6 @@ class Game : #Terrain de la partie
 	def updateMoves(self,movDic):
 		for move in movDic:
 			for edge in self.edges[move['sourceId']]:
-				print("DEBUGGING 'EDGE ERROR': ",edge)
 				if(edge.source.id == move['sourceId'] and edge.target.id == move['targetId']):
 					edge.addFleet(Fleet(move['owner'],move['sourceId'],move['targetId'],move['unitNb']))
 					break
@@ -65,11 +65,14 @@ class Player :
 	def __init__(self,id):
 		self.id = id
 		self.myNodes = []
+		self.startingNode = None
 
 	def clearNodes(self):
 		self.myNodes = []
 
 	def addNode(self,node):
+		if(self.startingNode == None):
+			self.startingNode = node
 		self.myNodes.append(node)
 
 class Node : #Cellule
@@ -121,3 +124,32 @@ class Fleet : #Flotte en mouvement
 		self.size = size #Taille
 		self.source = src #sur quelle arete elle se trouve
 		self.target = dst #sa destination
+'''
+class Router :
+	def __init__(self,gameBoard):
+		self.myGame = gameBoard
+		self.redirections = [] # Contient les sommets de passage (parent d'un noeud)
+		self.routes = [] # Contient les distances les plus courtes pour chaque noeud
+		for i in range(self.myGame.cellNb):
+			self.routes[i] = None
+			self.redirections[i] = None
+
+	def generateRoutes(self):
+		nodeVisited = []
+		firstNode = self.myGame.myPlayer.startingNode
+		self.routes[firstNode.id]=0
+
+		currentNode = firstNode
+		nextNode = firstNode
+
+		while(nextNode != None):
+			for(edge in currentNode.neighboorsEdges):
+				if(self.routes[edge.target.id] == None or self.routes[edge.target.id] > self.routes[currentNode.id]+edge.length):
+					self.routes[edge.target.id] = self.routes[currentNode.id]+edge.length
+					self.redirections[edge.target.id] = currentNode
+			nodeVisited.append(currentNode)
+
+			nextNode = None
+'''
+
+
