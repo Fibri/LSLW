@@ -48,6 +48,8 @@ def register_pooo(uid):
 
 
 def init_pooo(init_string):
+
+	print("INIT STATE : ",init_string)
 	
 	p = re.compile('INIT([A-z0-9-]*)TO(.*)\[(.*)\];(.);(\d+)CELLS:(.*);(\d+)LINES:(.*)')
  
@@ -118,14 +120,19 @@ def play_pooo():
 	# (2) TODO: traitement de init_state
 	print("Bot started !!!")
 	isRunning = True
+	isFinished = False
+
+	orderStack = []
+
 	while isRunning :
 
 		try:
-
 			state2 = state_on_update()
 			print(state2)
 			data = parse.analyzeState(state2,gameBoard.matchUid)
-			if(data['type'] == 'STATE'):
+			if(state2 == None):
+				pass
+			elif(data['type'] == 'STATE' and not isFinished):
 				global globalState
 				globalState = data['data']
 
@@ -140,22 +147,45 @@ def play_pooo():
 				# Classes du jeu dans gameBoard
 				# (Voir game.py -> Game() pour plus d'infos)
 
-				for myNode in gameBoard.myPlayer.myNodes:
-					target = None
-					numberOfEnnemy = 0
-					numberOfNeighboor = len(myNode.neighboors)
+				if(gameBoard.cellNb == len(gameBoard.myPlayer.myNodes)):
+					print("WE CAPTURED EVERY NODE !!! ~yay")
+					isFinished = True
+				else:
+					print("==========[",len(gameBoard.myPlayer.myNodes),"/",gameBoard.cellNb,"]==========")
+					if(len(orderStack) > 0):
+						print("=====THROWING ORDERS !!! ",len(orderStack), " REMAINING")
+						orderStack = sorted(orderStack, key=lambda order: order[1])
+						print(orderStack)
+						order(orderStack.pop()[0])
+					else:
+						print("=====ANALYZING THE MAP")
+						for myNode in gameBoard.myPlayer.myNodes:
+							if(myNode.unitAtq > 5):
+								target = None
+								numberOfEnnemy = 0
 
-					for neighboor in myNode.neighboors:
-						if(neighboor.owner != myNode.owner):
-							numberOfEnnemy += 1
-							if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef)):
-								target = neighboor
+								for neighboor in myNode.neighboors:
+									if(neighboor.owner != myNode.owner):
+										numberOfEnnemy += 1
+										if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef)):
+											target = neighboor
 
-				if(numberOfEnnemy == 0 and myNode.unitAtq > 0):
-					order(parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId))
+								if(numberOfEnnemy == 0):
+									for neighboor in myNode.neighboors:
+										if(neighboor.unitAtq < neighboor.maxAtq):
+											place = neighboor.maxAtq - neighboor.unitAtq - 1
+											orderStack.append((parse.createMoveOrder(myNode,neighboor.id,place,playerId),0))
+											break
 
-				elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
-					order(parse.createMoveOrder(myNode,target.id,target.unitAtq + target.unitDef + 1,playerId))
+								elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
+									orderStack.append((parse.createMoveOrder(myNode,target.id,target.unitAtq + target.unitDef + 1,playerId),3))
+
+								elif(target != None and (target.unitAtq == target.maxAtq) and (myNode.unitAtq == target.unitAtq)):
+									orderStack.append((parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId),2))
+									for neighboor in myNode.neighboors:
+										if (neighboor.owner == myNode.owner and neighboor.unitAtq >= 5):
+											orderStack.append((parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId),1))
+											break
 
 
 
@@ -173,8 +203,8 @@ def play_pooo():
 
 
 			elif(data['type'] == 'GAMEOVER'):
-				if(data['data'] == 1):
-					print("we won !!! [" , playerId,"]")
+				if(data['data'] == gameBoard.playerId):
+					print("we won !!!")
 			elif(data['type'] == 'ENDOFGAME'):
 				print("end of process")
 				isRunning = False
