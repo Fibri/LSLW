@@ -143,9 +143,9 @@ def parseMovesState(str):
 				3 : owner
 				4 : timestamp
 				"""
+				if(groups[0] != ''):
+					lastTarget = int(groups[0])
 				if(groups[1] == '<'):
-					if(groups[0] != ''):
-						lastTarget = int(groups[0])
 					movData = {
 						'targetId':lastTarget,
 						'unitNb':int(groups[2]),
@@ -159,7 +159,7 @@ def parseMovesState(str):
 						'unitNb':int(groups[2]),
 						'owner':int(groups[3]),
 						'timestamp':int(groups[4]),
-						'sourceId':int(groups[0])
+						'sourceId':lastTarget
 					}
 				data.append(movData)
 		
@@ -178,6 +178,8 @@ def analyzeState(str,matchid):
 	groups = res.groups()
 	
 	state_type = groups[0]
+
+	print("=============STATE TYPE : ",state_type)
 	
 	if (state_type == 'STATE'):
 		p = re.compile("STATE(.*)IS(\d+);(\d+)CELLS:(.*);(\d+)MOVES:{0,1}(.*)")
