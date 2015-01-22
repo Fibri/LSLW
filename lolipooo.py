@@ -119,8 +119,11 @@ def play_pooo():
 	parse.analyzeState(init_state,gameBoard.matchUid)
 	# (2) TODO: traitement de init_state
 	print("Bot started !!!")
+
 	isRunning = True
 	isFinished = False
+
+	importantTarget = gameBoard.nodes[3]
 
 	orderStack = []
 
@@ -150,42 +153,109 @@ def play_pooo():
 				if(gameBoard.cellNb == len(gameBoard.myPlayer.myNodes)):
 					print("WE CAPTURED EVERY NODE !!! ~yay")
 					isFinished = True
+				elif(len(gameBoard.myPlayer.myNodes) == 0):
+					print("WE LOST D=")
+					isFinished = True
 				else:
 					print("==========[",len(gameBoard.myPlayer.myNodes),"/",gameBoard.cellNb,"]==========")
 					if(len(orderStack) > 0):
 						print("=====THROWING ORDERS !!! ",len(orderStack), " REMAINING")
-						orderStack = sorted(orderStack, key=lambda order: order[1])
-						print(orderStack)
+						if(needSorting):
+							orderStack = sorted(orderStack, key=lambda order: order[1])
+							print(orderStack)
 						order(orderStack.pop()[0])
+						needSorting = False
 					else:
 						print("=====ANALYZING THE MAP")
-						for myNode in gameBoard.myPlayer.myNodes:
-							if(myNode.unitAtq > 5):
-								target = None
-								numberOfEnnemy = 0
 
-								for neighboor in myNode.neighboors:
-									if(neighboor.owner != myNode.owner):
-										numberOfEnnemy += 1
-										if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef)):
-											target = neighboor
+						if(importantTarget.owner != gameBoard.playerId):
+							tmp_target = importantTarget
 
-								if(numberOfEnnemy == 0):
+							while(gameBoard.router.redirections[tmp_target.id] != None and gameBoard.router.redirections[tmp_target.id].owner != gameBoard.playerId):
+								tmp_target = gameBoard.router.redirections[tmp_target.id]
+							tmp_source = gameBoard.router.redirections[tmp_target.id] # Selectionne le noeud prédécesseur comme source du prochain noeud à capturer
+
+							print("=========== NEXT CAPTURE IS ",tmp_target.id)
+
+							if(tmp_source.unitAtq > tmp_target.unitAtq + tmp_target.unitDef):
+								orderStack.append((parse.createMoveOrder(tmp_source,tmp_target.id,tmp_source.unitAtq,playerId),20)) # Order for capture
+
+							roadList = []
+							# Orders for helpers in the chain
+							while(gameBoard.router.redirections[tmp_source.id] != None):
+								tmp_target = tmp_source
+								tmp_source = gameBoard.router.redirections[tmp_source.id]
+
+								roadList.append(tmp_target)
+								print("ASSISSTING ORDER : ",tmp_source.id," -> ",tmp_target.id)
+								if(tmp_source.unitAtq > 0):
+									orderStack.append((parse.createMoveOrder(tmp_source,tmp_target.id,tmp_source.unitAtq,playerId),10))
+
+							for myNode in gameBoard.myPlayer.myNodes:
+								if(myNode not in roadList and len(myNode.neighboors) == 1 and myNode.unitAtq > 0):
+									orderStack.append((parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId),9))
+
+						else:
+
+							for myNode in gameBoard.myPlayer.myNodes:
+								if(myNode.unitAtq >= 5):
+									target = None
+									numberOfEnnemy = 0
+
 									for neighboor in myNode.neighboors:
-										if(neighboor.unitAtq < neighboor.maxAtq):
-											place = neighboor.maxAtq - neighboor.unitAtq - 1
-											orderStack.append((parse.createMoveOrder(myNode,neighboor.id,place,playerId),0))
-											break
+										if(neighboor.owner != myNode.owner):
+											numberOfEnnemy += 1
+											if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef) or (neighboor.prodSpeedAtq > target.prodSpeedAtq)):
+												target = neighboor
 
-								elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
-									orderStack.append((parse.createMoveOrder(myNode,target.id,target.unitAtq + target.unitDef + 1,playerId),3))
+									if(target != None and target.prodSpeedAtq > 1):
+										targetNeighboorsType = target.neighboorsType(myNode.id)
+										if(target.owner == -1 and targetNeighboorsType['ally'] >= targetNeighboorsType['ennemy']):
+											if(targetNeighboorsType['ally'] > 1):
+												for ally in target.neighboors:
+													if(ally.owner == myNode.id):
+														orderStack.append((parse.createMoveOrder(ally,target.id,ally.unitAtq,playerId),19))
+											else:
+												orderStack.append((parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId),19))
+										else:
+											orderStack.append((parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId),19))
 
-								elif(target != None and (target.unitAtq == target.maxAtq) and (myNode.unitAtq == target.unitAtq)):
-									orderStack.append((parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId),2))
-									for neighboor in myNode.neighboors:
-										if (neighboor.owner == myNode.owner and neighboor.unitAtq >= 5):
-											orderStack.append((parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId),1))
-											break
+									elif(len(myNode.neighboors) == 1):
+										orderStack.append((parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId),9))
+										#order(parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId))
+
+									elif(numberOfEnnemy == 0):
+										if(gameBoard.myPlayer.startingNode.id == 0 and myNode.id == 0):
+											orderStack.append((parse.createMoveOrder(myNode,2,myNode.unitAtq,playerId),-1))
+										elif(gameBoard.myPlayer.startingNode.id == 6 and myNode.id == 6):
+											orderStack.append((parse.createMoveOrder(myNode,4,myNode.unitAtq,playerId),-1))
+										else:
+											for i in range(len(gameBoard.router.redirections)):
+												if(gameBoard.router.redirections[i] == myNode):
+													orderStack.append((parse.createMoveOrder(myNode,i,myNode.unitAtq,playerId),-1))
+													break
+
+									elif(len(myNode.neighboors) == 2 and (myNode.neighboorsType(myNode.id)['ally']) == 1):
+										if(myNode.neighboors[0].owner == myNode.owner):
+											orderStack.append((parse.createMoveOrder(myNode,myNode.neighboors[1].id,myNode.unitAtq,playerId),9))
+											#order(parse.createMoveOrder(myNode,myNode.neighboors[1].id,myNode.unitAtq,playerId))
+										else:
+											orderStack.append((parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId),9))
+											#order(parse.createMoveOrder(myNode,myNode.neighboors[0].id,myNode.unitAtq,playerId))
+
+									elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
+										orderStack.append((parse.createMoveOrder(myNode,target.id,target.unitAtq + target.unitDef + 1,playerId),9))
+										#order(parse.createMoveOrder(myNode,target.id,target.unitAtq + target.unitDef + 1,playerId))
+
+									elif(target != None and (target.unitAtq == target.maxAtq) and (myNode.unitAtq == target.unitAtq)):
+										orderStack.append((parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId),8))
+										#order(parse.createMoveOrder(myNode,target.id,myNode.unitAtq,playerId))
+
+										for neighboor in myNode.neighboors:
+											if (neighboor.owner == myNode.owner and neighboor.unitAtq >= 5):
+												orderStack.append((parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId),7))
+												#order(parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId))
+												break
 
 
 
@@ -201,6 +271,8 @@ def play_pooo():
 
 
 
+
+						needSorting = True
 
 			elif(data['type'] == 'GAMEOVER'):
 				if(data['data'] == gameBoard.playerId):
@@ -211,12 +283,3 @@ def play_pooo():
 		except KeyboardInterrupt:
 			isRunning = False
 			print("STOPPING THE CLIENT BECAUSE OF CTRL + C")
-
-	# (5)     TODO: traitement de state et transmission d'ordres order(msg)
-	
-	#order(parse.createMoveOrder(cellFrom,cellTo,cellNb,playerId))
-	
-	
-	
-#init_pooo("INIT20ac18ab-6d18-450e-94af-bee53fdc8fcaTO6[2];1;3CELLS:1(23,9)'2'30'8'I,2(41,55)'1'30'8'II,3(23,103)'1'20'5'I;2LINES:1@3433OF2,1@6502OF3")
-#print(parse.analyzeState("STATE20ac18ab-6d18-450e-94af-bee53fdc8fcaIS2;3CELLS:1[2]12'4,2[2]15'2,3[1]33'6;4MOVES:1<5[2]@232'>6[2]@488'>3[1]@4330'2,1<10[1]@2241'3"))
