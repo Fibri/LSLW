@@ -30,8 +30,8 @@ def parseCellsInit(str):
 		
 		cellData = {
 		'id':int(groups[0]),
-		'x':int(groups[1]),
-		'y':int(groups[2]),
+		'x':int(groups[1])/1000,
+		'y':int(groups[2])/1000,
 		'radius':int(groups[3]),
 		'offsize':int(groups[4]),
 		'defsize':int(groups[5]),
@@ -121,7 +121,7 @@ def parseMovesState(str):
 		"""
 		
 		p = re.compile("(.*)'(\d+)$")
-		p2 = re.compile("(\d*)([<>])(\d+)\[(\d+)\]@(\d+)")
+		p2 = re.compile("(\d*)([<>])(\d+)\[(-{0,1}\d+)\]@(\d+)")
 		
 		for move in moves:
 			res = re.search(p, move)

@@ -1,3 +1,5 @@
+from collections import deque
+
 class Game : #Terrain de la partie
 	def __init__(self,matchUid,playerUid,playerId,speed,cellNb,lineNb):
 		self.matchUid = matchUid
@@ -25,7 +27,7 @@ class Game : #Terrain de la partie
 	
 	def generateCells(self,cellDic):
 		for cell in cellDic:
-			self.nodes[cell['id']] = Node(cell['x'],cell['y'],cell['id'],cell['offsize'],cell['defsize'],cell['prod'])
+			self.nodes[cell['id']] = Node(cell['x'],cell['y'],cell['id'],cell['offsize'],cell['defsize'],cell['prod'],self)
 			print("CREATE NODE WITH ID = ",cell['id'])
 
 	def generateLines(self,lineDic):
@@ -78,11 +80,13 @@ class Game : #Terrain de la partie
 
 				print("ADDING NEIGHBOOR WITH SOURCE = ", edge.source.id, " AND TARGET ", edge.target.id)
 		
-		for node in self.nodes:
-			node.sortNeighboors()
+		
 
 
 		#print("NUMBER OF NEIGHBOORS FOR ",node.id, " = ", len(node.neighboors))
+
+	
+
 
 class Player :
 	def __init__(self,id,gameBoard):
@@ -135,7 +139,8 @@ class Player :
 		
 		
 class Node : #Cellule
-	def __init__(self,x,y,id,offSize,defSize,prodSpeed):
+	def __init__(self,x,y,id,offSize,defSize,prodSpeed,gameBoard):
+		self.myGame = gameBoard
 		self.x = x #Coordonnées
 		self.y = y #Coordonnées
 		self.id = id
@@ -184,6 +189,8 @@ class Node : #Cellule
 		income = 0
 		if(self.owner != -1 and self.owner != myId):
 			income += self.unitAtq + self.unitDef
+		elif(self.owner == -1):
+			income -= self.unitAtq + self.unitDef
 		for neighboor in self.neighboors:
 			if(neighboor.owner != -1 and neighboor.owner != myId):
 				income += neighboor.unitAtq
@@ -196,7 +203,9 @@ class Node : #Cellule
 	def possibleAllyIncome(self,myId):
 		income = 0
 		if(self.owner == myId):
-			income += self.unitAtq
+			income += self.unitAtq + self.unitDef
+		elif(self.owner == -1):
+			income -= self.unitAtq + self.unitDef
 		for neighboor in self.neighboors:
 			if(neighboor.owner == myId):
 				income += neighboor.unitAtq
@@ -207,10 +216,13 @@ class Node : #Cellule
 		return income
 
 	def sortNeighboors(self):
-		self.neighboorsEdgesOut = sorted(self.neighboorsEdgesOut, key = lambda edge: edge.length)
-		self.neighboors = []
-		for edge in self.neighboorsEdgesOut:
-			self.neighboors.append(edge.target)
+		self.neighboors = sorted(self.neighboors, key = lambda node: (node.myGame.router.routes[node.id]['distance'],node.nodeValue()), reverse=False)
+
+	def nodeValue(self):
+		nbNeighboors = len(self.neighboors)
+		prod = self.prodSpeedAtq
+
+		return prod/nbNeighboors
 
 class Edge : #Arête
 	def __init__(self,s1,s2,time,gameBoard,id): #Arête de s1 vers s2
@@ -257,58 +269,30 @@ class Router :
 		self.nodeDisposition = {}
 		for i in range(self.myGame.cellNb):
 			self.routes.append(None)
-			self.redirections.append(None)
+			self.redirections.append([])
 			self.redirectionsForHelpers.append(None)
 
 	def generateRoutes(self,startingNode):
 		print("GENERATING DEFAULT ROUTES")
 		nodeVisited = []
+		nextNodes = deque([])
 		firstNode = startingNode
+		nextNodes.append(startingNode)
 		self.routes[firstNode.id]= {
 			'length':0,
 			'distance':0
 		}
 
-		currentNode = firstNode
-		nextNode = firstNode
+		while(len(nextNodes) > 0):
+			myNode = nextNodes.popleft()
+			for edge in myNode.neighboorsEdgesOut:
+				if(edge.target not in nodeVisited):
+					self.redirections[edge.target.id].append(myNode)
+					print("DEFAULT REDIRECTION : ",myNode.id," -> ",edge.target.id)
+					nextNodes.append(edge.target)
+			nodeVisited.append(myNode)
 
-		while(nextNode != None):
-			currentNode = nextNode
-			nextNode = None
-
-			print("NODE NUMBER ", currentNode.id)
-			for edge in currentNode.neighboorsEdgesOut:
-				if(self.routes[edge.target.id] == None or self.routes[edge.target.id]['length'] > self.routes[currentNode.id]['length']+edge.length):
-					self.routes[edge.target.id] = {
-						'length':self.routes[currentNode.id]['length']+edge.length,
-						'distance':self.routes[currentNode.id]['distance']+1
-					}
-					self.redirections[edge.target.id] = currentNode
-					print("DEFAULT REDIRECTION : ",currentNode.id," -> ",edge.target.id)
-			nodeVisited.append(currentNode.id)
-
-			tmp_len = None
-			for i in range(len(self.routes)):
-				if(self.routes[i] != None and (i not in nodeVisited)):
-					if(tmp_len == None or self.routes[i] < tmp_len):
-						nextNode = self.myGame.nodes[i] # objet Node
-			
-
-		print("DEFAULT ROUTING TABLE READY")
-		self.ready = True
-		self.generateHelpingRoutes()
-		self.generateNodeDisposition()
-		self.myGame.myPlayer.generateImportantTargets()
-
-	def generateRoutes2(self,startingNode):
-		print("GENERATING DEFAULT ROUTES")
 		nodeVisited = []
-		firstNode = startingNode
-		self.routes[firstNode.id]= {
-			'length':0,
-			'distance':0
-		}
-
 		currentNode = firstNode
 		nextNode = firstNode
 
@@ -318,13 +302,12 @@ class Router :
 
 			print("NODE NUMBER ", currentNode.id)
 			for edge in currentNode.neighboorsEdgesOut:
-				if(self.routes[edge.target.id] == None or self.routes[edge.target.id]['length'] > self.routes[currentNode.id]['length']+edge.length):
-					self.routes[edge.target.id] = {
-						'length':self.routes[currentNode.id]['length']+edge.length,
-						'distance':self.routes[currentNode.id]['distance']+1
-					}
-					self.redirections[edge.target.id] = currentNode
-					print("DEFAULT REDIRECTION : ",currentNode.id," -> ",edge.target.id)
+				if(edge.target not in nodeVisited):
+					if(self.routes[edge.target.id] == None or self.routes[edge.target.id]['length'] > self.routes[currentNode.id]['length']+edge.length):
+						self.routes[edge.target.id] = {
+							'length':self.routes[currentNode.id]['length']+edge.length,
+							'distance':self.routes[currentNode.id]['distance']+1
+						}
 			nodeVisited.append(currentNode.id)
 
 			tmp_len = None
@@ -333,8 +316,11 @@ class Router :
 					if(tmp_len == None or self.routes[i] < tmp_len):
 						nextNode = self.myGame.nodes[i] # objet Node
 			
+
 		print("DEFAULT ROUTING TABLE READY")
 		self.ready = True
+		for node in self.myGame.nodes:
+			node.sortNeighboors()
 		self.generateHelpingRoutes()
 		self.generateNodeDisposition()
 		self.myGame.myPlayer.generateImportantTargets()

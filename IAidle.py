@@ -117,8 +117,13 @@ def play_pooo():
 
 	parse.analyzeState(init_state,gameBoard.matchUid)
 
-	global globalState
-	#window = hud.HUD(gameBoard)
+	global window
+	
+	window = hud.HUD(gameBoard,Analyzer())
+
+	print("WILL INIT MAP")
+	window.initMap()
+	'''
 	# (2) TODO: traitement de init_state
 	print("Bot started !!!")
 	isRunning = True
@@ -136,8 +141,6 @@ def play_pooo():
 				gameBoard.updateCells(globalState['cellData'])
 				gameBoard.updateMoves(globalState['moveData'])
 
-				#window.draw()
-
 				# PUT THE STRATEGY HERE
 				# HERE !!!!
 				# Current State => globalState
@@ -145,7 +148,7 @@ def play_pooo():
 				# Classes du jeu dans gameBoard
 				# (Voir game.py -> Game() pour plus d'infos)
 
-
+				window.draw()
 
 
 				# IA IDLE 
@@ -172,3 +175,40 @@ def play_pooo():
 	
 #init_pooo("INIT20ac18ab-6d18-450e-94af-bee53fdc8fcaTO6[2];1;3CELLS:1(23,9)'2'30'8'I,2(41,55)'1'30'8'II,3(23,103)'1'20'5'I;2LINES:1@3433OF2,1@6502OF3")
 #print(parse.analyzeState("STATE20ac18ab-6d18-450e-94af-bee53fdc8fcaIS2;3CELLS:1[2]12'4,2[2]15'2,3[1]33'6;4MOVES:1<5[2]@232'>6[2]@488'>3[1]@4330'2,1<10[1]@2241'3"))
+	'''
+class Analyzer:
+	def __init__(self):
+		self.isRunning = True
+
+	def analyze(self):
+		global gameBoard
+		global globalState
+		global window
+
+		state2 = state_on_update()
+		print(state2)
+		data = parse.analyzeState(state2,gameBoard.matchUid)
+		if(data['type'] == 'STATE'):
+			globalState = data['data']
+
+			gameBoard.clearFleets()
+			gameBoard.updateCells(globalState['cellData'])
+			gameBoard.updateMoves(globalState['moveData'])
+
+			# PUT THE STRATEGY HERE
+			# HERE !!!!
+			# Current State => globalState
+			# (Voir dans parse.py -> analyseState() pour plus de détails)
+			# Classes du jeu dans gameBoard
+			# (Voir game.py -> Game() pour plus d'infos)
+
+
+			# IA IDLE 
+			# NE RIEN AJOUTER !!!
+
+		elif(data['type'] == 'GAMEOVER'):
+			if(data['data'] == 1):
+				print("we won !!! [" , playerId,"]")
+		elif(data['type'] == 'ENDOFGAME'):
+			print("end of process")
+			self.isRunning = False
