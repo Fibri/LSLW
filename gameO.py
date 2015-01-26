@@ -196,8 +196,9 @@ class Node : #Cellule
 				income += neighboor.unitAtq
 		for edge in self.neighboorsEdgesIn:
 			if(edge.source.id != -1 and edge.source.id != myId):
-				for fleet in edge.fleets:
-					income += fleet.size
+				income += edge.trafficPower()
+		if(income < 0):
+			income = 0
 		return income
 
 	def possibleAllyIncome(self,myId):
@@ -216,13 +217,16 @@ class Node : #Cellule
 		return income
 
 	def sortNeighboors(self):
-		self.neighboors = sorted(self.neighboors, key = lambda node: (node.myGame.router.routes[node.id]['distance'],node.nodeValue()), reverse=False)
+		self.neighboorsEdgesOut = sorted(self.neighboorsEdgesOut, key = lambda edge: (edge.length,edge.target.nodeValue()))
+		self.neighboors = []
+		for edge in self.neighboorsEdgesOut:
+			self.neighboors.append(edge.target)
 
 	def nodeValue(self):
 		nbNeighboors = len(self.neighboors)
 		prod = self.prodSpeedAtq
 
-		return prod/nbNeighboors
+		return prod*nbNeighboors
 
 class Edge : #Arête
 	def __init__(self,s1,s2,time,gameBoard,id): #Arête de s1 vers s2
@@ -270,7 +274,7 @@ class Router :
 		for i in range(self.myGame.cellNb):
 			self.routes.append(None)
 			self.redirections.append([])
-			self.redirectionsForHelpers.append(None)
+			self.redirectionsForHelpers.append([])
 
 	def generateRoutes(self,startingNode):
 		print("GENERATING DEFAULT ROUTES")
@@ -283,6 +287,7 @@ class Router :
 			'distance':0
 		}
 
+		'''
 		while(len(nextNodes) > 0):
 			myNode = nextNodes.popleft()
 			for edge in myNode.neighboorsEdgesOut:
@@ -291,12 +296,13 @@ class Router :
 					print("DEFAULT REDIRECTION : ",myNode.id," -> ",edge.target.id)
 					nextNodes.append(edge.target)
 			nodeVisited.append(myNode)
+		'''
 
 		nodeVisited = []
 		currentNode = firstNode
 		nextNode = firstNode
 
-		while(nextNode != None):
+		while(len(nextNodes) > 0):
 			currentNode = nextNode
 			nextNode = None
 
@@ -308,13 +314,17 @@ class Router :
 							'length':self.routes[currentNode.id]['length']+edge.length,
 							'distance':self.routes[currentNode.id]['distance']+1
 						}
+						print("TARGET : ",edge.target.id," DISTANCE : ",self.routes[currentNode.id]['distance']+1)
+						if(edge.target not in nodeVisited and edge.target not in nextNodes):
+							nextNodes.append(edge.target)
 			nodeVisited.append(currentNode.id)
+			nextNode = nextNodes.popleft()
 
-			tmp_len = None
-			for i in range(len(self.routes)):
-				if(self.routes[i] != None and (i not in nodeVisited)):
-					if(tmp_len == None or self.routes[i] < tmp_len):
-						nextNode = self.myGame.nodes[i] # objet Node
+		for sourceId in self.myGame.edges:
+			for edge in sourceId:
+				if(self.routes[edge.target.id]['distance'] >= self.routes[edge.source.id]['distance']):
+					self.redirections[edge.target.id].append(edge.source)
+					print("DEFAULT REDIRECTION : ",edge.source.id," -> ",edge.target.id)
 			
 
 		print("DEFAULT ROUTING TABLE READY")
@@ -335,38 +345,24 @@ class Router :
 		validNodes = []
 
 		for node in self.myGame.nodes:
-			if(len(node.neighboors) == 1):
-				if(self.routes[node.id]['distance'] > maxDist):
-					maxDist = self.routes[node.id]['distance']
+			found = False
+			for successorList in self.redirections:
+				if(node in successorList):
+					found = True
+			if( not found ):
 				validNodes.append(node)
 
-
 		for node in validNodes:
-			if(self.routes[node.id]['distance'] < maxDist):
-				tmp_source = node
-				tmp_target = node.neighboors[0]
-				self.redirectionsForHelpers[tmp_target.id] = tmp_source
-				print("HELPER REDIRECTION : ",tmp_source.id," -> ",tmp_target.id)
-
-				while(len(tmp_target.neighboors) == 2):
-					if(tmp_target.neighboors[0] == tmp_source):
-						tmp_source = tmp_target
-						tmp_target = tmp_target.neighboors[1]
-						self.redirectionsForHelpers[tmp_target.id] = tmp_source
-						print("HELPER REDIRECTION : ",tmp_source.id," -> ",tmp_target.id)
-					else:
-						tmp_source = tmp_target
-						tmp_target = tmp_target.neighboors[0]
-						self.redirectionsForHelpers[tmp_target.id] = tmp_source
-						print("HELPER REDIRECTION : ",tmp_source.id," -> ",tmp_target.id)
-
-			else:
-				tmp_source = node
-				tmp_target = node.neighboors[0]
-				self.redirectionsForHelpers[tmp_target.id] = tmp_source
-				print("HELPER REDIRECTION : ",tmp_source.id," -> ",tmp_target.id)
-
-
+			timesChild = 0
+			for neighboor in node.neighboors:
+				if(node not in self.redirections[neighboor.id]):
+					self.redirectionsForHelpers[neighboor.id].append(node)
+					print("HELPING REDIRECTION : ",node.id," -> ",neighboor.id)
+			if(timesChild == len(node.neighboors)):
+				self.redirectionsForHelpers[node.id] = []
+				for neighboor in node.neighboors:
+					self.redirectionsForHelpers[neighboor.id].append(node)
+					print("HELPING REDIRECTION : ",node.id," -> ",neighboor.id)
 
 		print("HELPING ROUTING TABLE READY")
 

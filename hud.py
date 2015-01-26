@@ -57,13 +57,13 @@ class HUD:
 		return self.canvas.create_oval(x-r, y-r, x+r, y+r, fill=color2, outline=outline2, width=width2)
 
 	def task(self):
-		self.myAnalyzer.analyzeIAflutterbat()
+		self.myAnalyzer.analyzeIAlittle()
 		if(self.activateFleets):
 			self.clearFleets()
 		self.draw()
 		
 		if(self.myAnalyzer.isRunning):
-			self.window.after(500,self.task)
+			self.window.after(100,self.task)
 
 	def clearFleets(self):
 		for fleet in self.fleets:
