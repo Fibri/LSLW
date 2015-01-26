@@ -22,4 +22,8 @@ Autres fichiers :
 *IAhud : un fichier pouvant utiliser n'importe quelle IA mais possède une fonction pour avoir une interface graphique
 
 Lien du git :
+<<<<<<< HEAD
 [github](https://github.com/Fibri/LSLW)
+=======
+[github](https://github.com/Fibri/LSLW)
+>>>>>>> af4acc48a033dfc139a25b79fba640e71d54a2ba

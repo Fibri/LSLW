@@ -124,14 +124,6 @@ def play_pooo():
 
 	orderStack = []
 	
-###
-###
-###
-###
-###
-###
-###
-##Lancer avant le 1er state update
 
 	while isRunning :
 
@@ -175,11 +167,6 @@ def play_pooo():
 									target = None
 									numberOfEnnemy = 0
 
-							#		for neighboor in myNode.neighboors:
-							#			if(neighboor.owner == -1) : #myNode.owner
-							#				numberOfEnnemy += 1
-							#				if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef)):
-							#					target = neighboor
 
 									if(numberOfEnnemy == 0):
 										for neighboor in myNode.neighboors:
@@ -203,13 +190,7 @@ def play_pooo():
 								if(myNode.unitAtq > 4):
 									target = None
 									numberOfEnnemy = 0
-
-							#		for neighboor in myNode.neighboors:
-									  
-							#			if(neighboor.owner == -1):#myNode.owner
-							#				numberOfEnnemy += 1
-							#				if (target == None or (neighboor.unitAtq + neighboor.unitDef) < (target.unitAtq + target.unitDef)):
-							#					target = neighboor
+									
 
 									if(numberOfEnnemy == 0):
 										for neighboor in myNode.neighboors:
@@ -225,7 +206,6 @@ def play_pooo():
 											  if(neighboor.unitAtq < neighboor.maxAtq):
 												  place = neighboor.maxAtq - neighboor.unitAtq - 1
 												  orderStack.append((parse.createMoveOrder(myNode,neighboor.id,place,playerId),0))
-												  #print('=======================SUPPORT '+str(myNode)+" A "+str(myNode.neighboors[0])+' DE '+str(myNode.unitAtq)+'==========')
 												  break
 
 									elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
@@ -236,17 +216,9 @@ def play_pooo():
 										for neighboor in myNode.neighboors:
 											if (neighboor.owner == myNode.owner and neighboor.unitAtq >= 7):
 												orderStack.append((parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId),1))
-												#print('===================2SUPPORT2 '+str(myNode)+" A "+str(myNode.neighboors[0])+' DE '+str(myNode.unitAtq)+'==========')
 												break
 									
 							else :		
-							  
-							#	for neighboor in myNode.neighboors:
-							#				if(neighboor.unitAtq < neighboor.maxAtq):
-							#					place = neighboor.maxAtq - neighboor.unitAtq - 1
-							#					orderStack.append((parse.createMoveOrder(myNode,neighboor.id,place,playerId),0))
-							#					#print('=======================BSUPPORTB '+str(myNode)+" A "+str(myNode.neighboors[0])+' DE '+str(myNode.unitAtq)+'==========')
-							#					break
 											  
 								if(myNode.unitAtq > 8):
 									target = None
@@ -273,7 +245,6 @@ def play_pooo():
 											  if(neighboor.unitAtq < neighboor.maxAtq):
 												  place = neighboor.maxAtq - neighboor.unitAtq - 1
 												  orderStack.append((parse.createMoveOrder(myNode,neighboor.id,place,playerId),0))
-												  #print('=======================SUPPORT '+str(myNode)+" A "+str(myNode.neighboors[0])+' DE '+str(myNode.unitAtq)+'==========')
 												  break
 
 									elif(target != None and (myNode.unitAtq >= target.unitAtq + target.unitDef + 1)):
@@ -284,23 +255,10 @@ def play_pooo():
 										for neighboor in myNode.neighboors:
 											if (neighboor.owner == myNode.owner and neighboor.unitAtq >= 5):
 												orderStack.append((parse.createMoveOrder(neighboor,myNode.id,neighboor.unitAtq,playerId),1))
-												#print('===================2SUPPORT2 '+str(myNode)+" A "+str(myNode.neighboors[0])+' DE '+str(myNode.unitAtq)+'==========')
 												break
 
 						
-						#for edge in gameBoard.edges :
-						#	for i in range (0,len(edge)) :
-						#		for j in range (0,len(edge[i].fleets)):
-						#			if edge[i].fleets[j] != None :
-						#				for neighboor in gameBoard.nodes[edge[i].fleets[j].target].neighboors :
-						#					if neighboor.owner==myNode.owner and neighboor.unitAtq>5 :
-						#						for neighboor2 in neighboor.neighboors :
-						#							if neighboor2.owner==myNode.owner or neighboor2.owner==None :
-						#								orderStack.append((parse.createMoveOrder(neighboor,gameBoard.nodes[edge[i].fleets[j].target].id,neighboor.unitAtq,playerId),1))
-														#print('*******************************************SUPPATQ**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************')
-														#break
-	
-
+			
 
 
 
