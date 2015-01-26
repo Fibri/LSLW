@@ -3,10 +3,11 @@ Descriptif des fichiers .py
 
 Fichiers structurels du programme :
 -----------------------------------
-*game.py : classes du jeu
-*gameO.py : classes du jeu utilisées par les dernières IA
-*hud.py : Interface graphique
-*parse.py : parser
+
+* game.py : classes du jeu
+* gameO.py : classes du jeu utilisées par les dernières IA
+* hud.py : Interface graphique
+* parse.py : parser
 
 Les IA triées selon un niveau de difficulté croissant :
 -------------------------------------------------------
@@ -19,11 +20,8 @@ Les IA triées selon un niveau de difficulté croissant :
 
 Autres fichiers :
 -----------------
-*IAhud : un fichier pouvant utiliser n'importe quelle IA mais possède une fonction pour avoir une interface graphique
+
+* IAhud : un fichier pouvant utiliser n'importe quelle IA mais possède une fonction pour avoir une interface graphique
 
 Lien du git :
-<<<<<<< HEAD
 [github](https://github.com/Fibri/LSLW)
-=======
-[github](https://github.com/Fibri/LSLW)
->>>>>>> af4acc48a033dfc139a25b79fba640e71d54a2ba
